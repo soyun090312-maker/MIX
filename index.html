@@ -543,6 +543,8 @@ details.notice-card[open] summary::after{transform:translateY(-50%) rotate(45deg
 .slot-dot{width:38px;height:38px;border-radius:50%;border:2px solid rgba(91,168,214,.5);background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:var(--mint-deep);}
 .slot-dot.full{background:var(--mint-sky);border-color:var(--mint-deep);color:#2F6A94;}
 .slot-m small{display:block;margin-top:10px;font-size:13px;color:var(--sub);}
+.slide video{width:100%;aspect-ratio:16/9;background:#000;object-fit:contain;display:block;}
+.vfr{aspect-ratio:16/9;background:#000;}.vfr iframe{width:100%;height:100%;border:0;display:block;}
 .rf-multi{font-size:12px;color:var(--sub);text-align:center;margin:-6px 0 12px;}
 </style>
 <div class="page"><header class="hero" id="hero"><div class="hero-wrap"><img class="hero-profile" data-g="프사.jpg" alt="먀온" onerror="this.style.display='none';document.getElementById('heroPh').style.display='flex'"><div class="hero-ph" id="heroPh">먀온</div></div><div class="hero-inner"><span class="hero-badge">UTAITE · MIXING</span><h1>먀온</h1><p>안녕하세요 우타이테 겸 믹싱 엔지니어<br>먀온이라고 합니다!</p><div class="hero-tags"><span class="hero-tag">우타이테</span><span class="hero-tag">믹싱 엔지니어</span><span class="hero-tag">솔로 · 듀엣 · 단체곡</span></div></div></header>
@@ -573,6 +575,7 @@ var CONFIG={
 };
 var IMG_BASE='이미지/';  /* 프사.jpg 가 들어있는 폴더 (프로필 사진 교체: 같은 이름으로 덮어쓰기) */
 /* 슬롯: 월 / 마감된 개수 / 총 슬롯 */
+var SOON='준비중입니다';
 var SLOTS=[{m:'11월',taken:0,total:4},{m:'12월',taken:0,total:4},{m:'1월',taken:0,total:4}];
 
 (function(){function h(){var m=0;Array.prototype.forEach.call(document.body.children,function(c){var r=c.getBoundingClientRect();if(r.bottom>m)m=r.bottom;});return Math.ceil(m+window.pageYOffset);}
@@ -642,7 +645,7 @@ window.addEventListener('message',function(e){var d=e.data;if(!d||d.type!=='scro
    - 시트 공유: 링크가 있는 모든 사용자 - 뷰어
    - 비어 있거나 탭이 없으면 이 파일에 들어있는 기본 내용이 그대로 보입니다.
    ================================================================== */
-var SHEET_ID='';
+var SHEET_ID='1VqprCB1J1iVa8_YISVmVJNx3gM5Jc5AGCPOwFNxxvDQ';
 
 function esc(t){return String(t==null?'':t).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function nl(t){return esc(t).replace(/\r?\n/g,'<br>');}
@@ -679,6 +682,7 @@ function applyBasic(rows){var m={};rows.forEach(function(r){m[(r[0]||'').trim()]
   if(tags.length)hero.querySelector('.hero-tags').innerHTML=tags.map(function(t){return '<span class="hero-tag">'+esc(t)+'</span>';}).join('');
   if(m['이벤트공지'])document.getElementById('deadline').innerHTML=nl(m['이벤트공지']);
   if(m['상단공지']){var a=sec('notice').querySelector('.notice-alert');if(a)a.innerHTML='<span class="notice-alert-mark">※</span> '+nl(m['상단공지']);}
+  if(m['준비중문구']){SOON=m['준비중문구'];document.querySelectorAll('#portfolio .soon').forEach(function(e){e.textContent=SOON;});}
   if(m['슬롯안내'])document.getElementById('slot-note').innerHTML=nl(m['슬롯안내']);
   if(m['문의번호'])CONFIG.qnaNumber=m['문의번호'].trim();
   if(m['문의버튼'])document.querySelectorAll('.ask-btn').forEach(function(b){b.textContent=m['문의버튼'];});
@@ -697,8 +701,22 @@ function applyProcess(rows){var g=groupRows(rows,0),html='';
 
 function applyPortfolio(rows){var g=groupRows(rows,0);if(!g.order.length)return;
   setBody('portfolio',tabset(g.order,g.order.map(function(k){var rs=g.map[k],desc=rs.map(function(r){return (r[2]||'').trim();}).filter(Boolean)[0]||'';
-    var slides=[];rs.forEach(function(r){var l=(r[1]||'').trim();if(!l)return;var id=ytId(l);if(id)slides.push(ytCard(id,capHtml(r[3])));else slides.push('<img data-g="'+esc(l)+'" alt="" style="width:100%;display:block" loading="lazy">'+(r[3]?'<div class="cap">'+capHtml(r[3])+'</div>':''));});
-    return (desc?'<div class="form-note-box">'+nl(desc)+'</div>':'')+(slides.length?sliderHtml(slides):'<div class="soon">준비중입니다</div>');})));}
+    var slides=[];rs.forEach(function(r){var l=(r[1]||'').trim();if(!l)return;var id=ytId(l),cp=r[3]?'<div class="cap">'+capHtml(r[3])+'</div>':'',kind=(r[4]||'').trim(),dm=l.match(/drive\.google\.com\/(?:file\/d\/|open\?id=|uc\?[^ ]*?id=)([\w-]+)/);
+      if(id)slides.push(ytCard(id,capHtml(r[3])));
+      else if(/\.(mp4|webm|mov|m4v)(\?|#|$)/i.test(l)||kind==='영상'&&!dm)slides.push('<video src="'+esc(imgSrc(l))+'" controls playsinline preload="metadata"></video>'+cp);
+      else if(dm&&kind!=='이미지')slides.push('<div class="vfr"><iframe src="https://drive.google.com/file/d/'+dm[1]+'/preview" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>'+cp);
+      else slides.push('<img data-g="'+esc(l)+'" alt="" style="width:100%;display:block" loading="lazy">'+cp);});
+    return (desc?'<div class="form-note-box">'+nl(desc)+'</div>':'')+(slides.length?sliderHtml(slides):'<div class="soon">'+esc(SOON)+'</div>');})));}
+
+/* 견적: 구분 | 항목 | 값 | 비고   (구분: 곡종류 / 용도 / 빠른마감 / 추가옵션) */
+function num(v){return parseFloat(String(v||'0').replace(/[^\d.]/g,''))||0;}
+function applyEst(rows){var g=groupRows(rows,0),on=function(r){return /인당|인/.test(r[3]||'');};
+  function pick(k,fn){var rs=(g.map[k]||[]).filter(function(r){return (r[1]||'').trim();});return rs.length?rs.map(fn):null;}
+  var s=pick('곡종류',function(r){var a=[r[1].trim(),num(r[2])];if(on(r))a.push(1);return a;});if(s)SONG.i=s;
+  var u=pick('용도',function(r){return [r[1].trim(),num(r[2])||1];});if(u){USE.i=u;st.use=0;}
+  var q=pick('빠른마감',function(r){return [r[1].trim(),num(r[2])||2];});if(q){RUSH.i=q;st.rush=-1;}
+  var o=pick('추가옵션',function(r){return [r[1].trim(),num(r[2])];});if(o)OPTS.i=o;
+  st.song=-1;st.opts=[];renderEst();}
 
 function applyRules(rows){var list=sec('rules').querySelector('.notice-list');if(!list)return;
   list.innerHTML=rows.map(function(r){var lines=String(r[1]||'').split(/\n/).filter(function(l){return l.trim();});
@@ -711,5 +729,6 @@ if(SHEET_ID){
   loadTab('작업순서').then(function(r){if(r.length)applyProcess(r);});
   loadTab('포트폴리오').then(function(r){if(r.length)applyPortfolio(r);});
   loadTab('주의사항').then(function(r){if(r.length)applyRules(r);});
+  loadTab('견적').then(function(r){if(r.length)applyEst(r);});
 }
 </script></body></html>
